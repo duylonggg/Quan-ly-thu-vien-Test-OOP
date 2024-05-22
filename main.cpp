@@ -62,6 +62,18 @@ vector<string> getInformationFromFile(const string& filename, int n) {
     return info;
 }
 
+// Kiểm tra thông tin needCheck đã tồn tại trong file hay chưa
+template <class val>
+bool isValid(const vector<val>& info, const val needCheck) {
+    for (auto i : info) {
+        if (i == needCheck) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 bool isExistAlphaOrNum(const string& s) {
     if (s.empty()) {
         return false;
@@ -196,6 +208,7 @@ public:
                     outFile << '[' << personID << "] " << newPersonInfo << endl;
                     found = true; // Đánh dấu là đã tìm thấy và cập nhật thông tin của cuốn sách
                 } 
+
                 // Nếu là các dữ liệu khác thì đẩy thẳng vào file
                 else {
                     outFile << line << endl;
@@ -332,7 +345,7 @@ public:
     bool isValid(){
         // Kiểm tra thông tin đã tồn tại trong file chưa ?
         vector<string> personIds, bookIds, eBookIds;
-        string filename = "test_borrowInfos.txt";
+        string filename = "borrowInfos.txt";
         ifstream file(filename);
         string line;
 
@@ -366,7 +379,48 @@ public:
         return true;
     }
 
+    bool isExist() {
+        vector<string> bookID = getInformationFromFile("books.txt", 0);
+        vector<string> eBookID = getInformationFromFile("ebooks.txt", 0);
+
+        bool bookOK = false, eBookOK = false;
+
+        for (string id : bookID) {
+            if (this->bookId == stoi(id)) {
+                bookOK = true;
+                break;
+            }
+        }
+
+        if (bookOK == false) {
+            setColor(12, 0);
+            cout << "This book is not exist!" << endl;
+            setColor(7, 0);
+            return false;
+        }
+
+        for (string id : eBookID) {
+            if (this->eBookId == stoi(id)) {
+                eBookOK = true;
+                break;
+            }
+        }
+
+        if (eBookOK == false) {
+            setColor(12, 0);
+            cout << "This eBook is not exist!" << endl;
+            setColor(7, 0);
+            return false;
+        }
+
+        return true;
+    }
+
     void addInfo(){
+        if (this->isExist() == false) {
+            return;
+        }
+
         // Kiểm tra dữ liệu trước khi thêm vào file
         if(this->isValid()){
             setColor(5, 0);
@@ -423,7 +477,7 @@ public:
         }
 
         if(del_pos == -1){
-            setColor(5, 0);
+            setColor(12, 0);
             cout << "Invalid return book information!\n";
             setColor(7, 0);
         }
@@ -476,7 +530,7 @@ public:
         }
 
         if(books.empty() && eBooks.empty()){
-            setColor(5, 0);
+            setColor(12, 0);
             cout << "You haven't borrowed any book!\n";
             setColor(7, 0);
             return;
@@ -630,12 +684,14 @@ public:
         vector<string> dataID = getInformationFromFile(filename, 0);
 
         set<long long> dataIDInt;
+
         for (string s : dataID) {
             dataIDInt.insert(stoi(s));
         } 
 
         int mex = 0;
-        for (auto it = dataIDInt.begin(); it != dataIDInt.end(); ++it) {\
+
+        for (auto it = dataIDInt.begin(); it != dataIDInt.end(); ++it) {
             if (*it > mex + 1) {
                 break;
             }
@@ -650,11 +706,18 @@ public:
     bool emailExists(const string& email) {
         vector<string> emails = getInformationFromFile("users.txt", 1);
 
+        int cnt = count(email.begin(), email.end(), '@');
+
+        if (cnt != 1) {
+            return false;
+        }
+
         for (const string& e : emails) {
             if (e == email) {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -677,10 +740,25 @@ public:
         if (email.size() > gmailDomain.size()) {
             return email.compare(email.size() - gmailDomain.size(), gmailDomain.size(), gmailDomain) == 0;
         }
+        
         return false;
     }
 
-   void Register(Person& p) {
+    bool isExistNum(const string& s) {
+        if (s.empty()) {
+            return false;
+        }
+
+        for (char c : s) {
+            if (c < '0' or c > '9') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    void Register(Person& p) {
         string fullName, email, gender, birthdate, address, phoneNumber, password;
 
         // Nhập thông tin từ người dùng
@@ -727,9 +805,9 @@ public:
         setColor(7, 0);
         getline(cin, gender);
 
-        while (!isExistAlphaOrNum(gender)) {
+        while (gender != "Male" and gender != "Female") {
             setColor(12, 0);
-            cout << "Wrong format, please enter correct format, no special characters!" << endl;
+            cout << "Wrong format, please enter correct format, Female or Male!" << endl;
             setColor(5, 0);
             cout << "Enter gender: ";
             setColor(7, 0);
@@ -741,9 +819,9 @@ public:
         setColor(7, 0);
         getline(cin, birthdate);
 
-        while (!isExistAlphaOrNum(birthdate)) {
+        while (!isdigit(birthdate[0]) or !isdigit(birthdate[1]) or !isdigit(birthdate[3]) or !isdigit(birthdate[4]) or !isdigit(birthdate[6]) or !isdigit(birthdate[7]) or !isdigit(birthdate[8]) or !isdigit(birthdate[9])) {
             setColor(12, 0);
-            cout << "Wrong format, please enter correct format, no special characters!" << endl;
+            cout << "Wrong format, please enter correct format (dd/mm/yyyy)" << endl;
             setColor(5, 0);
             cout << "Enter birthdate: ";
             setColor(7, 0);
@@ -770,9 +848,9 @@ public:
         setColor(7, 0);
         getline(cin, phoneNumber);
 
-        while (!isExistAlphaOrNum(phoneNumber)) {
+        while (!isExistNum(phoneNumber) or phoneNumber.size() != 10 or phoneNumber[0] != '0') {
             setColor(12, 0);
-            cout << "Wrong format, please enter correct format, no special characters!" << endl;
+            cout << "Wrong format, please enter the correct format. The number must contain only digits, start with a 0, and be 10 digits long!" << endl;
             setColor(5, 0);
             cout << "Enter phone number: ";
             setColor(7, 0);
@@ -1004,14 +1082,15 @@ public:
         vector<string> dataID = getInformationFromFile(filename, 0);
 
         set<long long> dataIDInt;
+
         for (string s : dataID) {
             dataIDInt.insert(stoi(s));
-        } 
+        }
 
         int mex = 0;
+
         for (auto it = dataIDInt.begin(); it != dataIDInt.end(); ++it) {
             if (*it > mex + 1) {
-                mex = mex + 1;
                 break;
             }
             mex = *it;
@@ -1020,15 +1099,15 @@ public:
         ++mex;
 
         if (outFile.is_open()) {
-            outFile << endl << '[' << to_string(mex) << "] " <<  bookInf;
+            outFile << endl << '[' << to_string(mex) << "] "<< bookInf;
             outFile.close();
             setColor(5, 0);
-            cout << "The information of the book has been successfully written!\n";
+            cout << "The book's information has been saved successfully !!!\n";
             setColor(7, 0);
         }
     }
 
-    void getBooks(const string& filename, int data) const {
+    void getBooks(const string &filename, int data) const{
         ifstream file(filename);
         string line;
         vector<string> lines;
@@ -1185,6 +1264,7 @@ public:
         }
 
         int pos = -1;
+
         for (int i = 0; i < cnt; ++i) {
             if (stoi(bookInfor[0][i]) == id) {
                 pos = i;
@@ -1226,6 +1306,7 @@ public:
         }
 
         int pos = -1;
+
         for (int i = 0; i < cnt; ++i) {
             if (bookData[0][i] == targetID) {
                 pos = i;
@@ -1273,17 +1354,6 @@ public:
     } 
 };
 
-// Kiểm tra thông tin needCheck đã tồn tại trong file hay chưa
-template <class val>
-bool isValid(const vector<val>& info, const val needCheck) {
-    for (auto i : info) {
-        if (i == needCheck) {
-            return false;
-        }
-    }
-    return true;
-}
-
 int cnt = 0;
 vector<string> attributeOfPerson = {"name", "email", "gender", "date of birth", "address", "phone number"};
 vector<string> attributeOfBook = {"book name", "author name", "quantity"};
@@ -1324,6 +1394,7 @@ string editPersonalData(Person& p) {
 
     string name;
     name = input(name, attributeOfPerson);
+
     if (name == "-1") {
         info += '[' + p.getName() + "] ";
     }
@@ -1333,6 +1404,7 @@ string editPersonalData(Person& p) {
 
     string email;
     email = input(email, attributeOfPerson);
+
     if (email == "-1") {
         info += '[' + p.getEmail() + "] ";
     }
@@ -1342,6 +1414,7 @@ string editPersonalData(Person& p) {
 
     string sex;
     sex = input(sex, attributeOfPerson);
+
     if (sex == "-1") {
         info += '[' + p.getSex() + "] ";
     }
@@ -1351,6 +1424,7 @@ string editPersonalData(Person& p) {
 
     string birthdate;
     birthdate = input(birthdate, attributeOfPerson);
+
     if (birthdate == "-1") {
         info += '[' + p.getBirthdate() + "] ";
     }
@@ -1360,6 +1434,7 @@ string editPersonalData(Person& p) {
 
     string address;
     address = input(address, attributeOfPerson);
+
     if (address == "-1") {
         info += '[' + p.getAddress() + "] ";
     }
@@ -1369,12 +1444,14 @@ string editPersonalData(Person& p) {
 
     string phoneNumber;
     phoneNumber = input(phoneNumber, attributeOfPerson);
+
     if (phoneNumber == "-1") {
         info += '[' + p.getPhoneNumber() + "] ";
     }
     else {
         info += '[' + phoneNumber + "] ";
     }
+
     return info;
 }
 
@@ -1384,6 +1461,7 @@ string editBookData(Book& b){
 
     string title;
     title = input(title, attributeOfBook);
+
     if (title == "-1") {
         info += '[' + b.getTitle() + "] ";
     }
@@ -1393,6 +1471,7 @@ string editBookData(Book& b){
 
     string author;
     author = input(author, attributeOfBook);
+
     if (title == "-1") {
         info += '[' + b.getAuthor() + "] ";
     }
@@ -1402,6 +1481,7 @@ string editBookData(Book& b){
 
     string quantity;
     quantity = input(quantity, attributeOfBook);
+
     if (title == "-1") {
         info += '[' + to_string(b.getQuantity()) + "] ";
     }
@@ -1450,7 +1530,7 @@ void menu() {
             << "|   3.  Add book (Admin).                                                                       |\n"
             << "|   4.  Edit book information (Admin).                                                          |\n"
             << "|   5.  Delete book (Admin).                                                                    |\n"
-            << "|   6.  Borrow book.                                                                            |\n"
+            << "|   6.  Borrow book (User).                                                                     |\n"
             << "|   7.  Return book.                                                                            |\n"
             << "|   8.  Get information of all books.                                                           |\n"
             << "|   9.  Get information of a book.                                                              |\n"
@@ -1481,6 +1561,7 @@ void pauseAndClear() {
     
     cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Clear the buffer
     cin.get(); // Wait for the user to press Enter
+
     clearScreen();
 }
 
@@ -1488,7 +1569,7 @@ int main() {
     clearScreen();
     menu();
 
-    string str;
+    string str = "";
     int query = 0;
     bool welcome = false;
 
@@ -1510,6 +1591,7 @@ int main() {
                 if (cin.fail()) {
                     cin.clear();
                     cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
                     setColor(12, 0);
                     throw runtime_error("Invalid format! Please try again.\n");
                     setColor(7, 0);
@@ -1546,6 +1628,7 @@ int main() {
                 setColor(5, 0); 
                 cout << '>' << endl;
                 setColor(7, 0);
+
                 pauseAndClear();
                 menu();
             }
@@ -1561,6 +1644,7 @@ int main() {
             if (cin.fail()) {
                 cin.clear();
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
                 setColor(12, 0);
                 throw runtime_error("Invalid format! Please try again.\n");
                 setColor(7, 0);
@@ -1569,28 +1653,68 @@ int main() {
             switch (query) {
                 case 3: 
                     if (p.getRole() == "Admin") {
-                        setColor(5, 0);
-                        cout << "Enter book information: ";
-                        setColor(7, 0);
-                        string bookInfo;
+                        int cnt = 0;
+
+                        string info;
                         cin.ignore();
-                        getline(cin, bookInfo);
-                        while (!isExistAlphaOrNum(bookInfo)) {
-                            setColor(12, 0);
-                            cout << "Wrong format, please enter correct format, no special characters!" << endl;
-                            setColor(5, 0);
-                            cout << "Enter book information: ";
-                            setColor(7, 0);
-                            getline(cin, bookInfo);
+
+                        while(cnt < 3){
+                            if(cnt == 0){
+                                setColor(5, 0);
+                                cout << "Enter the book title: ";
+                                setColor(7, 0);
+                            }
+
+                            else if(cnt == 1){
+                                setColor(5, 0);
+                                cout << "Enter the author: ";
+                                setColor(7, 0);
+                            }
+
+                            else if(cnt == 2){
+                                setColor(5, 0);
+                                cout << "Enter the quantity: ";
+                                setColor(7, 0);
+                            }
+
+                            string s;
+                            getline(cin, s);
+
+                            if (cnt == 0) {
+                                vector<string> bookTitleInfo = getInformationFromFile("books.txt", 1);
+
+                                while (isValid(bookTitleInfo, s) == false) {
+                                    setColor(12, 0);
+                                    cout << "This book is already exist !!!" << endl;
+                                    setColor(5, 0);
+                                    cout << "Enter another book title: ";
+                                    setColor(7, 0);
+
+                                    getline(cin, s);
+                                }
+                            }
+
+                            if (s.empty()){
+                                setColor(12, 0);
+                                cout << "You entered missing book information, please re-enter !!!\n";
+                                setColor(7, 0);
+                            }
+                            else{
+                                info = info + '[' + s + "] ";
+                                ++cnt;
+                            }
                         }
-                        b.addBook("books.txt", bookInfo);
-                    } 
+
+                        cout << '\n';
+                        b.addBook("books.txt", info);
+                    }
                     else {
                         setColor(12, 0);
                         cout << "You do not have permission to add book information!!!\n";
                         setColor(7, 0);
                     }
                     break;
+            
 
                 case 4:
                     if (p.getRole() == "User") {
@@ -1601,9 +1725,11 @@ int main() {
                     else {
                         vector<string> idBook = getInformationFromFile("books.txt", 0);
                         string id;
+
                         setColor(5, 0);
                         cout << "Enter the id of the book you want to edit: ";
                         setColor(7, 0);
+
                         cin >> id;
 
                         while (!isValid(idBook, id)) {
@@ -1612,11 +1738,13 @@ int main() {
                                  << "Please enter a valid book id!!!" << endl
                                  << "Re-enter the id of the book you want to edit: ";
                             setColor(7, 0);
+
                             cin >> id;
                         }
 
                         Book tmp = b.getData("books.txt", id, 4);
                         string info = editBookData(tmp);
+
                         b.updateBook("books.txt", info, id);
                     }
                     break;
@@ -1632,7 +1760,9 @@ int main() {
                         setColor(5, 0);
                         cout << "Enter the ID of the book to be deleted: ";
                         setColor(7, 0);
+
                         cin >> idDelBook;
+
                         b.deleteBook("books.txt", idDelBook);
                     }
                     break;
@@ -1643,13 +1773,16 @@ int main() {
                         setColor(5, 0);
                         cout << "Enter personId, bookId, eBookId\n";
                         setColor(7, 0);
+
                         cin >> personId >> bookId >> eBookId;
+
                         BorrowInfo bI(personId, bookId, eBookId);
+
                         bI.addInfo();
                     } 
                     else {
                         setColor(12, 0);
-                        cout << "You do not have permission to add book information!\n"; 
+                        cout << "This feature is only for User!!!\n"; 
                         setColor(7, 0);
                     }
                     break;
@@ -1660,8 +1793,11 @@ int main() {
                         setColor(5, 0);
                         cout << "Enter personId, bookId, eBookId\n";
                         setColor(7, 0);
+
                         cin >> personId >> bookId >> eBookId;
+
                         BorrowInfo bI(personId, bookId, eBookId);
+
                         bI.deleteInfo();
                     } 
                     else {
@@ -1675,6 +1811,7 @@ int main() {
                     setColor(5, 0);
                     cout << "Here is the information of the current books:" << endl;
                     setColor(7, 0);
+
                     b.getBooks("books.txt", 4);
                     break;
 
@@ -1682,8 +1819,10 @@ int main() {
                     setColor(5, 0);
                     cout << "Enter the ID of the book you want information about: ";
                     setColor(7, 0);
+
                     int id;
                     cin >> id;
+
                     b.getOneBook("books.txt", id, 4);
                     break;
 
@@ -1691,6 +1830,7 @@ int main() {
                     setColor(5, 0);
                     cout << "Here is the information of the current EBooks:" << endl;
                     setColor(7, 0);
+
                     eb.getBooks("ebooks.txt", 6);
                     break;
 
@@ -1698,8 +1838,10 @@ int main() {
                     setColor(5, 0);
                     cout << "Enter the ID of the EBook you want information about: ";
                     setColor(7, 0);
+
                     int idEBook;
                     cin >> idEBook;
+
                     eb.getOneBook("ebooks.txt", idEBook, 6);
                     break;
 
@@ -1718,7 +1860,9 @@ int main() {
                         setColor(5, 0);
                         cout << "Enter the ID of the user you want to see their borrowed books: ";
                         setColor(7, 0);
+
                         cin >> id;
+
                         bI.displayInfo(id);
                     }
                     break;
@@ -1726,6 +1870,7 @@ int main() {
                 case 14:
                     str = editPersonalData(p);
                     str += '[' + p.getRole() + ']';
+
                     p.updatePerson("people.txt", str, to_string(p.getID()));
                     break;
 
@@ -1738,9 +1883,11 @@ int main() {
                     else {
                         vector<string> idPerson = getInformationFromFile("people.txt", 0);
                         string id;
+
                         setColor(5, 0);
                         cout << "Enter the id of the user you want to edit: ";
                         setColor(7, 0);
+
                         cin >> id;
 
                         while (!isValid(idPerson, id)) {
@@ -1749,6 +1896,7 @@ int main() {
                                  << "Please enter a valid user id!!!" << endl
                                  << "Re-enter the id of the user you want to edit: ";
                             setColor(7, 0);
+                            
                             cin >> id;
                         }
 
